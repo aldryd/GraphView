@@ -88,6 +88,7 @@ abstract public class GraphView extends LinearLayout {
 
 			// horizontal labels + lines
 			int hors = horlabels.length - 1;
+            paint.setTextSize(graphViewStyle.getHLabelsTextSize());
 			for (int i = 0; i < horlabels.length; i++) {
 				paint.setColor(graphViewStyle.getGridColor());
 				float x = ((graphwidth / hors) * i) + horstart;
@@ -102,6 +103,8 @@ abstract public class GraphView extends LinearLayout {
 			}
 
 			paint.setTextAlign(Align.CENTER);
+
+            paint.setTextSize(graphViewStyle.getTitleTextSize());
 			canvas.drawText(title, (graphwidth / 2) + horstart, border - 4, paint);
 
 			if (maxY == minY) {
@@ -224,6 +227,7 @@ abstract public class GraphView extends LinearLayout {
 
 			// vertical labels
 			paint.setTextAlign(Align.LEFT);
+            paint.setTextSize(graphViewStyle.getHLabelsTextSize());
 			int vers = verlabels.length - 1;
 			for (int i = 0; i < verlabels.length; i++) {
 				float y = ((graphheight / vers) * i) + border;
@@ -268,7 +272,7 @@ abstract public class GraphView extends LinearLayout {
 		else
 			this.title = title;
 
-		graphViewStyle = new GraphViewStyle();
+        graphViewStyle = new GraphViewStyle(context);
 
 		paint = new Paint();
 		graphSeries = new ArrayList<GraphViewSeries>();
