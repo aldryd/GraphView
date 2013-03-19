@@ -124,6 +124,9 @@ abstract public class GraphView extends LinearLayout {
 		}
 
 		private void onMoveGesture(float f) {
+            // Pause the graph when the user tries to scroll
+            paused = true;
+
 			// view port update
 			if (viewportSize != 0) {
 				viewportStart -= f*viewportSize/graphwidth;
@@ -164,10 +167,16 @@ abstract public class GraphView extends LinearLayout {
 				// if not scaled, scroll
 				if ((event.getAction() & MotionEvent.ACTION_DOWN) == MotionEvent.ACTION_DOWN) {
 					handled = true;
+
+                    // pause a real-time graph when the user presses down
+                    paused = true;
 				}
 				if ((event.getAction() & MotionEvent.ACTION_UP) == MotionEvent.ACTION_UP) {
 					lastTouchEventX = 0;
 					handled = true;
+
+                    // unpause when the graph is released
+                    paused = false;
 				}
 				if ((event.getAction() & MotionEvent.ACTION_MOVE) == MotionEvent.ACTION_MOVE) {
 					if (lastTouchEventX != 0) {
@@ -181,6 +190,7 @@ abstract public class GraphView extends LinearLayout {
 			}
 			return handled;
 		}
+
 	}
 
 	/**
@@ -257,6 +267,9 @@ abstract public class GraphView extends LinearLayout {
 	private double manualMinYValue;
 	private GraphViewStyle graphViewStyle;
     private final GraphViewContentView graphViewContentView;
+
+    // Allows a real-time graph to be paused to make scrolling through the data easier
+    private boolean paused = false;
 
 	/**
 	 *
@@ -565,9 +578,12 @@ abstract public class GraphView extends LinearLayout {
 
 	public void scrollToEnd() {
 		if (!scrollable) throw new IllegalStateException("This GraphView is not scrollable.");
-		double max = getMaxX(true);
-		viewportStart = max-viewportSize;
-		redrawAll();
+
+        if (!paused) {
+            double max = getMaxX(true);
+            viewportStart = max - viewportSize;
+            redrawAll();
+        }
 	}
 
 	/**
