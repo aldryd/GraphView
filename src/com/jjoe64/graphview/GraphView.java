@@ -117,7 +117,8 @@ abstract public class GraphView extends LinearLayout {
 			paint.setStrokeCap(Paint.Cap.ROUND);
 
 			for (int i=0; i<graphSeries.size(); i++) {
-				drawSeries(canvas, _values(i), graphwidth, graphheight, border, minX, minY, diffX, diffY, horstart, graphSeries.get(i).style);
+                drawSeries(canvas, graphSeries.get(i), graphwidth, graphheight, border, minX, minY,
+                        diffX, diffY, horstart, graphSeries.get(i).style);
 			}
 
 			if (showLegend) drawLegend(canvas, height, width);
@@ -132,8 +133,8 @@ abstract public class GraphView extends LinearLayout {
 				viewportStart -= f*viewportSize/graphwidth;
 
 				// minimal and maximal view limit
-				double minX = getMinX(true);
-				double maxX = getMaxX(true);
+                float minX = getMinX(true);
+                float maxX = getMaxX(true);
 				if (viewportStart < minX) {
 					viewportStart = minX;
 				} else if (viewportStart+viewportSize > maxX) {
@@ -252,8 +253,8 @@ abstract public class GraphView extends LinearLayout {
 	private String[] verlabels;
 	private String title;
 	private boolean scrollable;
-	private double viewportStart;
-	private double viewportSize;
+    private float viewportStart;
+    private float viewportSize;
 	private final View viewVerLabels;
 	private ScaleGestureDetector scaleDetector;
 	private boolean scalable;
@@ -263,8 +264,8 @@ abstract public class GraphView extends LinearLayout {
 	private float legendWidth = 120;
 	private LegendAlign legendAlign = LegendAlign.MIDDLE;
 	private boolean manualYAxis;
-	private double manualMaxYValue;
-	private double manualMinYValue;
+    private float manualMaxYValue;
+    private float manualMinYValue;
 	private GraphViewStyle graphViewStyle;
     private final GraphViewContentView graphViewContentView;
 
@@ -306,33 +307,6 @@ abstract public class GraphView extends LinearLayout {
 		graphViewStyle = style;
 	}
 
-	private GraphViewData[] _values(int idxSeries) {
-		GraphViewData[] values = graphSeries.get(idxSeries).values;
-		if (viewportStart == 0 && viewportSize == 0) {
-			// all data
-			return values;
-		} else {
-			// viewport
-			List<GraphViewData> listData = new ArrayList<GraphViewData>();
-			for (int i=0; i<values.length; i++) {
-				if (values[i].valueX >= viewportStart) {
-					if (values[i].valueX > viewportStart+viewportSize) {
-						listData.add(values[i]); // one more for nice scrolling
-						break;
-					} else {
-						listData.add(values[i]);
-					}
-				} else {
-					if (listData.isEmpty()) {
-						listData.add(values[i]);
-					}
-					listData.set(0, values[i]); // one before, for nice scrolling
-				}
-			}
-			return listData.toArray(new GraphViewData[listData.size()]);
-		}
-	}
-
 	public void addSeries(GraphViewSeries series) {
 		series.addGraphView(this);
 		graphSeries.add(series);
@@ -371,7 +345,9 @@ abstract public class GraphView extends LinearLayout {
 		}
 	}
 
-	abstract public void drawSeries(Canvas canvas, GraphViewData[] values, float graphwidth, float graphheight, float border, double minX, double minY, double diffX, double diffY, float horstart, GraphViewSeriesStyle style);
+    abstract public void drawSeries(Canvas canvas, GraphViewSeries series, float graphwidth,
+            float graphheight, float border, double minX, double minY, double diffX, double diffY,
+            float horstart, GraphViewSeriesStyle style);
 
 	/**
 	 * formats the label
@@ -444,104 +420,87 @@ abstract public class GraphView extends LinearLayout {
 	 *
 	 * warning: only override this, if you really know want you're doing!
 	 */
-	protected double getMaxX(boolean ignoreViewport) {
+    protected float getMaxX(boolean ignoreViewport) {
 		// if viewport is set, use this
 		if (!ignoreViewport && viewportSize != 0) {
 			return viewportStart+viewportSize;
 		} else {
 			// otherwise use the max x value
-			// values must be sorted by x, so the last value has the largest X value
-			double highest = 0;
-			if (graphSeries.size() > 0)
-			{
-				GraphViewData[] values = graphSeries.get(0).values;
-				if (values.length == 0) {
-					highest = 0;
-				} else {
-					highest = values[values.length-1].valueX;
-					for (int i=1; i<graphSeries.size(); i++) {
-						values = graphSeries.get(i).values;
-						highest = Math.max(highest, values[values.length-1].valueX);
-					}
-				}
-			}
+            float highest = Float.MIN_VALUE;
+            for (int i = 0; i < graphSeries.size(); i++) {
+                float mm = graphSeries.get(i).getMaxX();
+                if (mm > highest) {
+                    highest = mm;
+                }
+            } // for
 			return highest;
 		}
 	}
 
-	/**
-	 * returns the maximal Y value of all data.
-	 *
-	 * warning: only override this, if you really know want you're doing!
-	 */
-	protected double getMaxY() {
-		double largest;
-		if (manualYAxis) {
-			largest = manualMaxYValue;
-		} else {
-			largest = Integer.MIN_VALUE;
-			for (int i=0; i<graphSeries.size(); i++) {
-				GraphViewData[] values = _values(i);
-				for (int ii=0; ii<values.length; ii++)
-					if (values[ii].valueY > largest)
-						largest = values[ii].valueY;
-			}
-		}
-		return largest;
-	}
+	    /**
+     * returns the maximal Y value of all data.
+     * 
+     * warning: only override this, if you really know what you're doing!
+     */
+    protected float getMaxY() {
+        float largest;
+        if (manualYAxis) {
+            return manualMaxYValue;
+        } else {
+            largest = Float.MIN_VALUE;
+            for (int i = 0; i < graphSeries.size(); i++) {
+                float mm = graphSeries.get(i).getMaxY();
+                if (mm > largest)
+                    largest = mm;
+            } // for i
+        }
+        return largest;
+    }
 
-	/**
-	 * returns the minimal X value of the current viewport (if viewport is set)
-	 * otherwise minimal X value of all data.
-	 * @param ignoreViewport
-	 *
-	 * warning: only override this, if you really know want you're doing!
-	 */
-	protected double getMinX(boolean ignoreViewport) {
-		// if viewport is set, use this
-		if (!ignoreViewport && viewportSize != 0) {
-			return viewportStart;
-		} else {
-			// otherwise use the min x value
-			// values must be sorted by x, so the first value has the smallest X value
-			double lowest = 0;
-			if (graphSeries.size() > 0)
-			{
-				GraphViewData[] values = graphSeries.get(0).values;
-				if (values.length == 0) {
-					lowest = 0;
-				} else {
-					lowest = values[0].valueX;
-					for (int i=1; i<graphSeries.size(); i++) {
-						values = graphSeries.get(i).values;
-						lowest = Math.min(lowest, values[0].valueX);
-					}
-				}
-			}
-			return lowest;
-		}
-	}
+    /**
+     * returns the minimal X value of the current viewport (if viewport is set)
+     * otherwise minimal X value of all data.
+     * 
+     * @param ignoreViewport
+     * 
+     *            warning: only override this, if you really know want you're doing!
+     */
+    protected float getMinX(boolean ignoreViewport) {
+        // if viewport is set, use this
+        if (!ignoreViewport && viewportSize != 0) {
+            return viewportStart;
+        } else {
+            // otherwise use the min x value
+            float lowest = Float.MAX_VALUE;
+            for (int i = 0; i < graphSeries.size(); i++) {
+                float mm = graphSeries.get(i).getMinX();
+                if (mm < lowest)
+                    lowest = mm;
+            } // for
+            return lowest;
+        } // else
+    }
 
-	/**
-	 * returns the minimal Y value of all data.
-	 *
-	 * warning: only override this, if you really know want you're doing!
-	 */
-	protected double getMinY() {
-		double smallest;
-		if (manualYAxis) {
-			smallest = manualMinYValue;
-		} else {
-			smallest = Integer.MAX_VALUE;
-			for (int i=0; i<graphSeries.size(); i++) {
-				GraphViewData[] values = _values(i);
-				for (int ii=0; ii<values.length; ii++)
-					if (values[ii].valueY < smallest)
-						smallest = values[ii].valueY;
-			}
-		}
-		return smallest;
-	}
+    /**
+     * returns the minimal Y value of all data.
+     * 
+     * warning: only override this, if you really know want you're doing!
+     */
+    protected float getMinY() {
+        float smallest;
+        if (manualYAxis) {
+            return manualMinYValue;
+        } else {
+            smallest = Float.MAX_VALUE;
+            for (int i = 0; i < graphSeries.size(); i++) {
+                float mm = graphSeries.get(i).getMinY();
+                if (mm < smallest)
+                    smallest = mm;
+            } // for
+
+        } // else
+        return smallest;
+    }
 
 	public boolean isScrollable() {
 		return scrollable;
@@ -580,7 +539,7 @@ abstract public class GraphView extends LinearLayout {
 		if (!scrollable) throw new IllegalStateException("This GraphView is not scrollable.");
 
         if (!paused) {
-            double max = getMaxX(true);
+            float max = getMaxX(true);
             viewportStart = max - viewportSize;
             redrawAll();
         }
@@ -616,7 +575,7 @@ abstract public class GraphView extends LinearLayout {
 	 * @param max
 	 * @param min
 	 */
-	public void setManualYAxisBounds(double max, double min) {
+    public void setManualYAxisBounds(float max, float min) {
 		manualMaxYValue = max;
 		manualMinYValue = min;
 		manualYAxis = true;
@@ -633,19 +592,19 @@ abstract public class GraphView extends LinearLayout {
 			scaleDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
 				@Override
 				public boolean onScale(ScaleGestureDetector detector) {
-					double center = viewportStart + viewportSize / 2;
+                            float center = viewportStart + viewportSize / 2;
 					viewportSize /= detector.getScaleFactor();
 					viewportStart = center - viewportSize / 2;
 
 					// viewportStart must not be < minX
-					double minX = getMinX(true);
+                            float minX = getMinX(true);
 					if (viewportStart < minX) {
 						viewportStart = minX;
 					}
 
 					// viewportStart + viewportSize must not be > maxX
-					double maxX = getMaxX(true);
-					double overlap = viewportStart + viewportSize - maxX;
+                            float maxX = getMaxX(true);
+                            float overlap = viewportStart + viewportSize - maxX;
 					if (overlap > 0) {
 						// scroll left
 						if (viewportStart-overlap > minX) {
@@ -688,7 +647,7 @@ abstract public class GraphView extends LinearLayout {
 	 * @param start x-value
 	 * @param size
 	 */
-	public void setViewPort(double start, double size) {
+    public void setViewPort(float start, float size) {
 		viewportStart = start;
 		viewportSize = size;
 	}

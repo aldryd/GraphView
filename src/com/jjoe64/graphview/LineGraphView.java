@@ -27,23 +27,34 @@ public class LineGraphView extends GraphView {
 	}
 
 	@Override
-	public void drawSeries(Canvas canvas, GraphViewData[] values, float graphwidth, float graphheight, float border, double minX, double minY, double diffX, double diffY, float horstart, GraphViewSeriesStyle style) {
+    public void drawSeries(Canvas canvas, GraphViewSeries series, float graphwidth,
+            float graphheight, float border, double minX, double minY, double diffX, double diffY,
+            float horstart, GraphViewSeriesStyle style) {
 		// draw background
 		double lastEndY = 0;
 		double lastEndX = 0;
+        int len = series.seriesLength;
+        float[] xs = series.xValues;
+        float[] ys = series.yValues;
 		if (drawBackground) {
 			float startY = graphheight + border;
-			for (int i = 0; i < values.length; i++) {
-				double valY = values[i].valueY - minY;
+            for (int i = 0; i < len; i++) {
+                double valY = ys[i] - minY;
 				double ratY = valY / diffY;
 				double y = graphheight * ratY;
 
-				double valX = values[i].valueX - minX;
+                double valX = xs[i] - minX;
 				double ratX = valX / diffX;
 				double x = graphwidth * ratX;
 
 				float endX = (float) x + (horstart + 1);
 				float endY = (float) (border - y) + graphheight +2;
+
+                if (xs[i] < minX) { // skip if it is not on the display window
+                    lastEndY = endY;
+                    lastEndX = endX;
+                    continue;
+                }
 
 				if (i > 0) {
 					// fill space between last and current point
@@ -62,25 +73,36 @@ public class LineGraphView extends GraphView {
 					}
 				}
 
+                // skip the rest if it is not in the display window
+                if (xs[i] > minX + diffX) {
+                    break;
+                }
+
 				lastEndY = endY;
 				lastEndX = endX;
 			}
 		}
 
 		// draw data
-		paint.setStrokeWidth(style.thickness);
-		paint.setColor(style.color);
+        paint.setStrokeWidth(series.style.thickness);
+        paint.setColor(series.style.color);
 
 		lastEndY = 0;
 		lastEndX = 0;
-		for (int i = 0; i < values.length; i++) {
-			double valY = values[i].valueY - minY;
+        for (int i = 0; i < len; i++) {
+            double valY = ys[i] - minY;
 			double ratY = valY / diffY;
 			double y = graphheight * ratY;
 
-			double valX = values[i].valueX - minX;
+            double valX = xs[i] - minX;
 			double ratX = valX / diffX;
 			double x = graphwidth * ratX;
+
+            if (xs[i] < minX) { // skip if it is not on the display window
+                lastEndY = y;
+                lastEndX = x;
+                continue;
+            }
 
 			if (i > 0) {
 				float startX = (float) lastEndX + (horstart + 1);
@@ -90,6 +112,12 @@ public class LineGraphView extends GraphView {
 
 				canvas.drawLine(startX, startY, endX, endY, paint);
 			}
+
+            // skip the rest if it is not in the display window
+            if (xs[i] > minX + diffX) {
+                break;
+            }
+
 			lastEndY = y;
 			lastEndX = x;
 		}
