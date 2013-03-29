@@ -13,6 +13,9 @@ import android.os.Bundle;
  * http://www.gnu.org/licenses/lgpl.html
  */
 public class GraphViewDemo extends Activity {
+
+    private static final int GRAPH_DATA_SIZE_THRESHOLD = 500;
+
     /**
      * @param savedInstanceState
      */
@@ -24,7 +27,7 @@ public class GraphViewDemo extends Activity {
                 , "GraphViewDemo"
                 );
         graphView.addSeries(new GraphViewSeries(new float[] { 1f, 2f, 3f, 4f, 5f },
-                new float[] { 2.1f, 1.2f, 3.3f, 1.4f, 2.5f }));
+                new float[] { 2.1f, 1.2f, 3.3f, 1.4f, 2.5f }, GRAPH_DATA_SIZE_THRESHOLD));
 
         setContentView(graphView);
     }

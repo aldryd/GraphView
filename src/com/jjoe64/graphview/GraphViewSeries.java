@@ -35,15 +35,21 @@ public class GraphViewSeries {
     float[] yValues;
     int seriesLength;
 
-    // The size limit for the arrays. This keeps the arrays from continually growing.
-    private static final int ARRAY_GROWTH_SIZE_LIMIT = 2000;
+    // Index for where the series starts in the circular buffer
+    private int seriesStart = 0;
 
-    public GraphViewSeries(float[] xValues, float[] yValues) {
-        this(null, null, xValues, yValues);
+    // Index for the last item in the series in the circular buffer.
+    private int seriesLast;
+
+    // The size limit for the arrays. This keeps the arrays from continually growing.
+    private final int arrayThreshold;
+
+    public GraphViewSeries(float[] xValues, float[] yValues, int threshold) {
+        this(null, null, xValues, yValues, threshold);
 	}
 
     public GraphViewSeries(String description, GraphViewSeriesStyle style, float[] xValues,
-            float[] yValues) {
+            float[] yValues, int threshold) {
         super();
 		this.description = description;
 		if (style == null) {
@@ -60,24 +66,25 @@ public class GraphViewSeries {
         this.xValues = xValues;
         this.yValues = yValues;
         seriesLength = xValues.length;
+        seriesLast = seriesLength - 1;
+        arrayThreshold = threshold;
 	}
 
     /**
-     * Get the minimum x value. It is assumed that the
-     * smallest x value is the first value in the series.
+     * Get the minimum x value. It is assumed that the minimum value is the first item in the
+     * circular array.
      * 
-     * @param
-     * @return largest value
+     * @return smallest value
      */
     public float getMinX() {
         if (xValues == null)
             return 0.0f;
-        return xValues[0];
+        return xValues[seriesStart];
     }
 
     /**
-     * Get the maximum x value. It is assumed that the
-     * largest x value is the last value in the series.
+     * Get the maximum x value. It is assumed that the maximum value is the last item in the
+     * circular array.
      * 
      * @param
      * @return largest value
@@ -85,7 +92,7 @@ public class GraphViewSeries {
     public float getMaxX() {
         if (xValues == null)
             return 10.0f;
-        return xValues[seriesLength - 1];
+        return xValues[seriesLast];
     }
 
     /**
@@ -137,25 +144,43 @@ public class GraphViewSeries {
 	 */
     public void appendData(float xValue, float yValue, boolean scrollToEnd) {
 
-        // Grow the array if we have filled it up
+        // Grow the array if we have filled it up unless we have reached the growth limit
         if (xValues.length == seriesLength) {
-            // Double the array sizes
-            float newXVals[] = new float[xValues.length * 2];
-            float newYVals[] = new float[yValues.length * 2];
+            if (xValues.length < arrayThreshold) {
+                // Double the array sizes
+                float newXVals[] = new float[xValues.length * 2];
+                float newYVals[] = new float[yValues.length * 2];
 
-            System.arraycopy(xValues, 0, newXVals, 0, seriesLength);
-            System.arraycopy(yValues, 0, newYVals, 0, seriesLength);
+                System.arraycopy(xValues, 0, newXVals, 0, seriesLength);
+                System.arraycopy(yValues, 0, newYVals, 0, seriesLength);
 
-            xValues = newXVals;
-            yValues = newYVals;
+                xValues = newXVals;
+                yValues = newYVals;
+            } else {
+                // If the last item has hit the end of the array, reset it to the beginning
+                if (seriesLast == seriesLength - 1) {
+                    seriesLast = 0;
+                } else {
+                    seriesLast++;
+                }
+
+                // If the starting item has hit the end of the array, reset it to the beginning
+                if (seriesStart == seriesLength - 1) {
+                    seriesStart = 0;
+                } else {
+                    seriesStart++;
+                }
+            }
+        } else {
+            // If we haven't hit the size limit, increment these together
+            // Once the limit has been reached, the seriesLength should stop growing since it will
+            // always equal the array length at that point
+            seriesLength++;
+            seriesLast++;
         }
 
-        xValues[seriesLength] = xValue;
-        yValues[seriesLength] = yValue;
-
-        // Increment the length after adding the values to the array so it can act as the index
-        // first and then the length last
-        seriesLength++;
+        xValues[seriesLast] = xValue;
+        yValues[seriesLast] = yValue;
 
         if (scrollToEnd) {
             for (GraphView g : graphViews) {
