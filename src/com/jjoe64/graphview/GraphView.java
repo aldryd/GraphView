@@ -121,6 +121,11 @@ abstract public class GraphView extends LinearLayout {
                         diffX, diffY, horstart, graphSeries.get(i).style);
 			}
 
+            if (graphSeries.size() == 0 || graphSeries.get(0).seriesLength == 1) {
+                paint.setColor(graphViewStyle.getOverlayColor());
+                canvas.drawText(initialOverlay, (graphwidth / 2) + horstart, graphheight / 2, paint);
+            }
+
 			if (showLegend) drawLegend(canvas, height, width);
 		}
 
@@ -154,7 +159,17 @@ abstract public class GraphView extends LinearLayout {
 		 */
 		@Override
 		public boolean onTouchEvent(MotionEvent event) {
-			if (!isScrollable()) {
+            boolean enoughDataToScroll = false;
+
+            // See if there is enough data to scroll
+            if (graphSeries.size() > 0 && graphSeries.get(0).seriesLength > viewportSize) {
+                enoughDataToScroll = true;
+            }
+
+            // If the graph is not scrollable or if there's not enough data to scroll, send the
+            // touch event to the super class. This allows the graph to support onClickListener
+            // events until there is enough data to scroll.
+            if (!isScrollable() || enoughDataToScroll == false) {
 				return super.onTouchEvent(event);
 			}
 
@@ -252,6 +267,7 @@ abstract public class GraphView extends LinearLayout {
 	private String[] horlabels;
 	private String[] verlabels;
 	private String title;
+    private String initialOverlay;
 	private boolean scrollable;
     private float viewportStart;
     private float viewportSize;
@@ -277,7 +293,7 @@ abstract public class GraphView extends LinearLayout {
 	 * @param context
 	 * @param title [optional]
 	 */
-	public GraphView(Context context, String title) {
+    public GraphView(Context context, String title, String initialOverlay) {
 		super(context);
 		setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
 
@@ -285,6 +301,12 @@ abstract public class GraphView extends LinearLayout {
 			title = "";
 		else
 			this.title = title;
+		
+		if (initialOverlay == null) {
+            this.initialOverlay = "";
+		} else {
+		    this.initialOverlay = initialOverlay;
+		}
 
         graphViewStyle = new GraphViewStyle(context);
 
@@ -588,7 +610,7 @@ abstract public class GraphView extends LinearLayout {
 	synchronized public void setScalable(boolean scalable) {
 		this.scalable = scalable;
 		if (scalable == true && scaleDetector == null) {
-			scrollable = true; // automatically forces this
+            scrollable = true; // automatically forces this
 			scaleDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
 				@Override
 				public boolean onScale(ScaleGestureDetector detector) {

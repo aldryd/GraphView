@@ -18,8 +18,12 @@ public class LineGraphView extends GraphView {
 	private final Paint paintBackground;
 	private boolean drawBackground;
 
-	public LineGraphView(Context context, String title) {
-		super(context, title);
+    public LineGraphView(Context context, String title) {
+        this(context, title, null);
+    }
+
+    public LineGraphView(Context context, String title, String initialOverlay) {
+        super(context, title, initialOverlay);
 
 		paintBackground = new Paint();
 		paintBackground.setARGB(255, 20, 40, 60);

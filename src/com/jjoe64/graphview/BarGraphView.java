@@ -10,9 +10,13 @@ import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
  * @author Muhammad Shahab Hameed
  */
 public class BarGraphView extends GraphView {
-	public BarGraphView(Context context, String title) {
-		super(context, title);
-	}
+    public BarGraphView(Context context, String title) {
+        super(context, title, null);
+    }
+
+    public BarGraphView(Context context, String title, String initialOverlay) {
+        super(context, title, initialOverlay);
+    }
 
 	@Override
     public void drawSeries(Canvas canvas, GraphViewSeries series, float graphwidth,

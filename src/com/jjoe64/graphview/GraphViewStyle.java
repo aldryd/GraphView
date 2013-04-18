@@ -12,6 +12,7 @@ import android.util.TypedValue;
 public class GraphViewStyle {
 	private int vLabelsColor;
 	private int hLabelsColor;
+    private int overlayColor;
 	private int gridColor;
     private float titleTextSize;
     private float vLabelsTextSize;
@@ -22,6 +23,7 @@ public class GraphViewStyle {
     public GraphViewStyle(Context context) {
 		vLabelsColor = Color.WHITE;
 		hLabelsColor = Color.WHITE;
+        overlayColor = Color.MAGENTA;
 		gridColor = Color.DKGRAY;
 
         this.context = context;
@@ -34,10 +36,12 @@ public class GraphViewStyle {
                 .getResources().getDisplayMetrics());
 	}
 
-    public GraphViewStyle(Context context, int vLabelsColor, int hLabelsColor, int gridColor) {
+    public GraphViewStyle(Context context, int vLabelsColor, int hLabelsColor, int gridColor,
+            int overlayColor) {
         this(context);
 		this.vLabelsColor = vLabelsColor;
 		this.hLabelsColor = hLabelsColor;
+        this.overlayColor = overlayColor;
 		this.gridColor = gridColor;
 	}
 
@@ -48,6 +52,10 @@ public class GraphViewStyle {
 	public int getHorizontalLabelsColor() {
 		return hLabelsColor;
 	}
+
+    public int getOverlayColor() {
+        return overlayColor;
+    }
 
 	public int getGridColor() {
 		return gridColor;
@@ -60,6 +68,10 @@ public class GraphViewStyle {
 	public void setHorizontalLabelsColor(int c) {
 		hLabelsColor = c;
 	}
+
+    public void setOverlayColor(int c) {
+        overlayColor = c;
+    }
 
 	public void setGridColor(int c) {
 		gridColor = c;
